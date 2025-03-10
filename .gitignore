@@ -4,3 +4,4 @@
 /.lake
 /.vscode
 DateTime/c/lean
+.nix-shell
