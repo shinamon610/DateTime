@@ -12,7 +12,7 @@ elab "#get_libstdcpp" : command =>
   open Lean Elab Command Term in do
   let defLib (term : Expr) :=
     liftTermElabM <| addAndCompile <| Declaration.defnDecl {
-        name := "libstdcpp"
+        name := `libstdcpp
         levelParams := []
         type := mkApp (mkConst ``Option [.zero]) (mkConst ``System.FilePath)
         value := term
@@ -50,11 +50,11 @@ lean_exe datetime where
   root := `Main
   supportInterpreter := true
 
-target datetime.o pkg : FilePath := do
+target datetime.o pkg : System.FilePath := do
   let oFile := pkg.buildDir / "DateTime" / "c" / "datetime.o"
-  let srcJob ← inputFile <| pkg.dir / "DateTime" / "c"  / "datetime.cpp"
+  let srcJob ← inputFile (pkg.dir / "DateTime" / "c"  / "datetime.cpp") true
   let flags := #["-I", (← getLeanIncludeDir).toString, "-fPIC" ]
-  buildO "datetime.cpp" oFile srcJob flags #[] "cc"
+  buildO oFile srcJob flags
 
 extern_lib libleandatetime pkg := do
   let name := nameToStaticLib "datetime"

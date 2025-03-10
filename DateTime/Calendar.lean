@@ -345,6 +345,33 @@ deriving Inhabited, DecidableEq
 
 namespace Date
 
+def aux_ymd (y : Year) (m : Month) (days : Nat) (nonzero : days ≠ 0) : Date :=
+  let max_days := m.num_days y
+  if h : days > max_days.val then -- used in the `decreasing_by`
+    let (mon', year') := m.next y
+    aux_ymd year' mon' (days - max_days.val)
+      (Nat.ne_zero_of_lt (Nat.zero_lt_sub_of_lt h))
+  else .year_month_day y m ⟨days, nonzero⟩
+    (by simp [Nat.not_lt_eq _ _] at h; exact h)
+termination_by days
+decreasing_by
+  exact Nat.sub_lt
+    (Nat.zero_lt_of_ne_zero nonzero)
+    (Nat.zero_lt_of_ne_zero (Month.num_days y m).property)
+
+def aux_yd (y : Year) (days : Nat) (nonzero : days ≠ 0) : Date :=
+  let max_days := y.num_days
+  if h : days > max_days then -- used in the `decreasing_by`
+    aux_yd (y + 1) (days - max_days)
+      (Nat.ne_zero_of_lt (Nat.zero_lt_sub_of_lt h))
+  else .year_day y ⟨days, nonzero⟩
+    (by simp [Nat.not_lt_eq _ _] at h; exact h)
+termination_by days
+decreasing_by
+  exact Nat.sub_lt
+    (Nat.zero_lt_of_ne_zero nonzero)
+    (Year.zero_lt_num_days y)
+
 def add_ymd (date : Date) (year mon day : Nat) : Date :=
   match date with
   | .century y              => .century ((y.toNat + year) % 100)
@@ -367,36 +394,6 @@ def add_ymd (date : Date) (year mon day : Nat) : Date :=
           intro h
           simp [Nat.zero_eq_add _ _ |>.mp h.symm] at this
       )
-
-where
-  aux_ymd (y : Year) (m : Month) (days : Nat) (nonzero : days ≠ 0) : Date :=
-    let max_days := m.num_days y
-    if h : days > max_days.val then -- used in the `decreasing_by`
-      let (mon', year') := m.next y
-      aux_ymd year' mon' (days - max_days.val)
-        (Nat.not_eq_zero_of_lt (Nat.zero_lt_sub_of_lt h))
-    else .year_month_day y m ⟨days, nonzero⟩
-      (by simp [Nat.not_lt_eq _ _] at h; exact h)
-  aux_yd (y : Year) (days : Nat) (nonzero : days ≠ 0) : Date :=
-    let max_days := y.num_days
-    if h : days > max_days then -- used in the `decreasing_by`
-      aux_yd (y + 1) (days - max_days)
-        (Nat.not_eq_zero_of_lt (Nat.zero_lt_sub_of_lt h))
-    else .year_day y ⟨days, nonzero⟩
-      (by simp [Nat.not_lt_eq _ _] at h; exact h)
-
-termination_by
-  aux_ymd y m d _ => d
-  aux_yd y d _ => d
-decreasing_by
-  aux_ymd =>
-    exact Nat.sub_lt
-      (Nat.zero_lt_of_ne_zero nonzero)
-      (Nat.zero_lt_of_ne_zero (Month.num_days y m).property)
-  aux_yd =>
-    exact Nat.sub_lt
-      (Nat.zero_lt_of_ne_zero nonzero)
-      (Year.zero_lt_num_days y)
 
 instance : HAdd Date (Nat × Nat × Nat) Date :=
   ⟨fun date (y, m, d) => date.add_ymd y m d⟩
