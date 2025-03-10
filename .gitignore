@@ -1,3 +1,5 @@
+.direnv
+.envrc
 .DS_Store
 /.lake
 /.vscode
